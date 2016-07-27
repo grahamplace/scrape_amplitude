@@ -9,12 +9,12 @@ library(dplyr)
 make_customer.frame <- function(t) {
   #randomly sample data points
   index <- sample(1:nrow(t), 1000)
-  input <- full_file[t,]
+  input <- t[index,]
   
   #login to Amplitude
   checkForServer()
   startServer()
-  browser <- remoteDriver(browserName = "chrome")
+  browser <- remoteDriver()
   browser$open()
   browser$navigate("https://amplitude.com/login")
   browser$findElement(using = 'css selector', '#login-email')$sendKeysToElement(list("margaretlou2019@u.northwestern.edu"))
@@ -41,7 +41,7 @@ make_customer.frame <- function(t) {
       customer.frame <- rbind(customer.frame, temp)
     }
     
-    write.csv(customer.frame , file = temp_scraped.csv)
+    write.csv(customer.frame , file = "temp_scraped.csv")
   }
     browser$close()
     
