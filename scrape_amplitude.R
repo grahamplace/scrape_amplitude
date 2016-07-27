@@ -1,32 +1,65 @@
 library(rvest)
 library(RSelenium)
-
-#open browser 
-checkForServer()
-startServer()
-browser <- remoteDriver()
-browser$open()
-url <- "https://amplitude.com/login"
-browser$navigate(url)
-
-#locate search bars
-email_input <- browser$findElement(using = 'css selector', '#login-email')
-email_input$sendKeysToElement(list("margaretlou2019@u.northwestern.edu"))
-password_input <- browser$findElement(using = 'css selector', '#login-password')
-password_input$sendKeysToElement(list("maggie_lou"))
-button <- browser$findElement(using = 'xpath', '/html/body/div[2]/div/form/fieldset/div[3]/button')
-button$clickElement()
-
-browser$navigate("https://amplitude.com/app/146509/activity/search?userId=8408666528")
-table <- browser$findElement(using = 'css selector', 'table.table.half.user-details-table')
-table <- readHTMLTable(header = TRUE, table$getElementAttribute("outerHTML")[[1]])
+library(reshape2)
+library(dplyr)
 
 
-
-
-#login-email simplified
-remDr$open()
-remDr$navigate(appURL)
-remDr$findElement("id", "login")$sendKeysToElement(list("myusername"))
-remDr$findElement("id", "pass")$sendKeysToElement(list("mypass"))
-remDr$findElement("css", ".am-login-form input[type='submit']")$clickElement()
+#' @param t A table holding the user IDs for which data must be scraped. 
+#' @return A dataframe holding all customer data for the IDs in the input table. 
+make_customer.frame <- function(t) {
+  #randomly sample data points
+  index <- sample(1:nrow(t), 1000)
+  input <- full_file[t,]
+  
+  #login to Amplitude
+  checkForServer()
+  startServer()
+  browser <- remoteDriver(browserName = "chrome")
+  browser$open()
+  browser$navigate("https://amplitude.com/login")
+  browser$findElement(using = 'css selector', '#login-email')$sendKeysToElement(list("margaretlou2019@u.northwestern.edu"))
+  browser$findElement(using = 'css selector', '#login-password')$sendKeysToElement(list("maggie_lou", key = 'enter'))
+    # button <- browser$findElement(using = 'xpath', '/html/body/div[2]/div/form/fieldset/div[3]/button')
+    # button$clickElement()
+  Sys.sleep(20)
+  
+  #scrape tables
+  customer.frame <- c()
+  for (i in 1:length(input$amplitude_id)) {
+    print(input$amplitude_id[i])
+    #scrape data from Amplitude
+    temp <- grab_customer.data(input$amplitude_id[i], browser)
+    print(i)
+    
+    # add data from input csv
+    temp <- cbind(temp, input[i,])[,-1]
+    
+    #add to existing table
+    if(i==1) {
+      customer.frame <- temp
+    } else {
+      customer.frame <- rbind(customer.frame, temp)
+    }
+    
+    write.csv(customer.frame , file = temp_scraped.csv)
+  }
+    browser$close()
+    
+    return(customer.frame)
+  
+  }
+  
+  
+  
+  #' @param customer_id An int representing user ID.
+  #' @return A dataframe holding the customer data for the input user.
+  grab_customer.data <- function(user_id, browser){
+    #scrape table
+    print(user_id)
+    browser$navigate(paste("https://amplitude.com/app/146509/activity/search?userId=", user_id, sep=""))
+    Sys.sleep(20)
+    cust_table <- browser$findElement(using = 'css selector', 'table.table.half.user-details-table')
+    cust_table <- readHTMLTable(header = FALSE, cust_table$getElementAttribute("outerHTML")[[1]])[[1]][2] %>% t() %>% as.data.frame()
+    names(cust_table) <- c("User_ID", "Amplitude_ID", "Merged_ID", "Total_Events", "Total_Sessions", "Usage_Time", "First_Seen", "Last_Seen", "Num_Purchases", "Total_Spent")
+    return(cust_table)
+}
