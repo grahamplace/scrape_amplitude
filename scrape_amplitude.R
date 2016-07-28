@@ -6,7 +6,7 @@ library(dplyr)
 
 #' @param t A table holding the user IDs for which data must be scraped. 
 #' @return A dataframe holding all customer data for the IDs in the input table. 
-make_customer.frame <- function(t) {
+scrape_amplitude <- function(t) {
   #randomly sample data points
   index <- sample(1:nrow(t), 1000)
   input <- t[index,]
