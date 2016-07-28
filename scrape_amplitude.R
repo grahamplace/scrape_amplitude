@@ -8,7 +8,7 @@ library(dplyr)
 #' @return A dataframe holding all customer data for the IDs in the input table. 
 scrape_amplitude <- function(t) {
   #randomly sample data points
-  index <- sample(1:nrow(t), 1000)
+  index <- sample(1:nrow(t), nrow(t))
   input <- t[index,]
   
   #login to Amplitude
@@ -41,7 +41,7 @@ scrape_amplitude <- function(t) {
       customer.frame <- rbind(customer.frame, temp)
     }
     
-    write.csv(customer.frame , file = "temp_scraped.csv")
+    write.csv(customer.frame , file = "temp_scraped2.csv")
   }
     browser$close()
     
